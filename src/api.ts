@@ -65,7 +65,8 @@ export interface PlanPatch {
   features?: PlanFeature[]; order_index?: number; active?: boolean;
 }
 
-const BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? "http://localhost:8000";
+// Default backend URL. Override via VITE_API_BASE env var during build if you move backend.
+const BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? "https://tg-stars-backend.onrender.com";
 export const API_BASE = BASE;
 const TOKEN_KEY = "tg_stars_jwt";
 
