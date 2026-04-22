@@ -1,11 +1,12 @@
 import { useMemo } from "react";
-import { Lock, CheckCircle2, Star, Loader2, ShieldCheck, Sparkles } from "lucide-react";
-import type { Plan, PlanId, Subscription } from "../api";
+import { Lock, CheckCircle2, Star, Loader2, ShieldCheck, Sparkles, Hash, Users, Tv2 } from "lucide-react";
+import type { Plan, PlanId, PublicChannel, Subscription } from "../api";
 import { iconFor } from "../lib/icons";
 import { Button, Badge } from "../components/ui";
 
 interface Props {
   plans: Plan[];
+  channels: PublicChannel[];
   subscription: Subscription | null;
   selected: PlanId;
   onSelect: (id: PlanId) => void;
@@ -13,13 +14,19 @@ interface Props {
   status: "idle" | "loading" | "success" | "error";
 }
 
-export default function Plans({ plans, subscription, selected, onSelect, onPay, status }: Props) {
+function channelsForPlan(planId: string, all: PublicChannel[]): PublicChannel[] {
+  return all.filter(c => c.plan === planId || c.plan === "all");
+}
+
+export default function Plans({ plans, channels, subscription, selected, onSelect, onPay, status }: Props) {
   const sorted = useMemo(
     () => [...plans].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0) || a.stars - b.stars),
     [plans]
   );
   const current = sorted.find(p => p.id === selected) ?? sorted[0];
   const isCurrent = subscription?.plan?.id === current?.id && subscription?.active;
+
+  const totalMembers = channels.reduce((acc, c) => acc + (c.members || 0), 0);
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -30,6 +37,15 @@ export default function Plans({ plans, subscription, selected, onSelect, onPay, 
           More Control,<br/><span className="bg-gradient-to-r from-brand-300 via-brand-500 to-brand-700 bg-clip-text text-transparent">More Freedom.</span>
         </h1>
         <p className="text-sm text-ink-300 max-w-md mx-auto">Pay natively with Telegram Stars. Cancel anytime.</p>
+
+        {channels.length > 0 && (
+          <div className="mt-4 inline-flex items-center gap-4 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-[11px] tracking-widest uppercase text-ink-300">
+            <span className="flex items-center gap-1.5"><Tv2 className="h-3.5 w-3.5 text-brand-400"/> {channels.length} channels</span>
+            {totalMembers > 0 && (
+              <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5 text-brand-400"/> {formatCount(totalMembers)} members</span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* tabs */}
@@ -54,13 +70,24 @@ export default function Plans({ plans, subscription, selected, onSelect, onPay, 
 
       {/* responsive grid: mobile = single card; lg+ = show all as comparison grid */}
       <div className="lg:hidden">
-        {current && <PlanCard plan={current} highlight isCurrent={!!isCurrent} onSelect={() => onSelect(current.id)} />}
+        {current && (
+          <div key={current.id} className="card-enter">
+            <PlanCard
+              plan={current}
+              channels={channelsForPlan(current.id, channels)}
+              highlight
+              isCurrent={!!isCurrent}
+              onSelect={() => onSelect(current.id)}
+            />
+          </div>
+        )}
       </div>
       <div className="hidden lg:grid grid-cols-3 gap-5">
         {sorted.map(p => (
           <PlanCard
             key={p.id}
             plan={p}
+            channels={channelsForPlan(p.id, channels)}
             highlight={p.id === current?.id}
             isCurrent={subscription?.plan?.id === p.id && !!subscription?.active}
             onSelect={() => onSelect(p.id)}
@@ -87,8 +114,8 @@ export default function Plans({ plans, subscription, selected, onSelect, onPay, 
   );
 }
 
-function PlanCard({ plan, highlight, isCurrent, onSelect }: {
-  plan: Plan; highlight: boolean; isCurrent: boolean; onSelect: () => void;
+function PlanCard({ plan, channels, highlight, isCurrent, onSelect }: {
+  plan: Plan; channels: PublicChannel[]; highlight: boolean; isCurrent: boolean; onSelect: () => void;
 }) {
   return (
     <button
@@ -117,22 +144,61 @@ function PlanCard({ plan, highlight, isCurrent, onSelect }: {
         </div>
       </div>
 
-      <ul className="relative mt-5 space-y-2.5">
-        {plan.features.map((f, i) => {
-          const Icon = iconFor(f.icon);
-          return (
-            <li key={i} className="flex items-center gap-3 text-[13px]">
-              <span className={`h-7 w-7 rounded-lg grid place-items-center ${highlight ? "bg-brand-500/15 text-brand-300" : "bg-white/5 text-ink-300"}`}>
-                <Icon className="h-3.5 w-3.5" />
-              </span>
-              <span className={highlight ? "text-white" : "text-ink-100/80"}>{f.text}</span>
-              {highlight
-                ? <CheckCircle2 className="ml-auto h-4 w-4 text-brand-400 shrink-0" />
-                : <Lock className="ml-auto h-3.5 w-3.5 text-ink-300 shrink-0" />}
-            </li>
-          );
-        })}
-      </ul>
+      {/* features */}
+      {plan.features.length > 0 && (
+        <ul className="relative mt-5 space-y-2.5">
+          {plan.features.map((f, i) => {
+            const Icon = iconFor(f.icon);
+            return (
+              <li
+                key={i}
+                className="flex items-center gap-3 text-[13px] fade-in"
+                style={{ animationDelay: `${70 + i * 55}ms` }}
+              >
+                <span className={`h-7 w-7 rounded-lg grid place-items-center ${highlight ? "bg-brand-500/15 text-brand-300" : "bg-white/5 text-ink-300"}`}>
+                  <Icon className="h-3.5 w-3.5" />
+                </span>
+                <span className={highlight ? "text-white" : "text-ink-100/80"}>{f.text}</span>
+                {highlight
+                  ? <CheckCircle2 className="ml-auto h-4 w-4 text-brand-400 shrink-0" />
+                  : <Lock className="ml-auto h-3.5 w-3.5 text-ink-300 shrink-0" />}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {/* included channels */}
+      {channels.length > 0 && (
+        <div className="relative mt-5 pt-4 border-t border-white/5">
+          <p className="text-[10px] tracking-[0.25em] uppercase text-ink-300 mb-2.5 flex items-center gap-1.5">
+            <Tv2 className="h-3 w-3 text-brand-400" /> Includes {channels.length} channel{channels.length === 1 ? "" : "s"}
+          </p>
+          <ul className="space-y-1.5">
+            {channels.slice(0, 4).map((c, i) => (
+              <li
+                key={c.id}
+                className="flex items-start gap-2 text-[12px] leading-tight fade-in"
+                style={{ animationDelay: `${140 + i * 60}ms` }}
+              >
+                <Hash className={`h-3.5 w-3.5 mt-0.5 shrink-0 ${highlight ? "text-brand-400" : "text-ink-300"}`} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-white truncate">{c.name}</p>
+                  {c.description && <p className="text-ink-300 text-[11px] truncate">{c.description}</p>}
+                </div>
+                {c.members > 0 && (
+                  <span className="text-[10px] text-ink-300 tracking-wider shrink-0">
+                    {formatCount(c.members)}
+                  </span>
+                )}
+              </li>
+            ))}
+            {channels.length > 4 && (
+              <li className="text-[11px] text-ink-300 pl-5">+ {channels.length - 4} more</li>
+            )}
+          </ul>
+        </div>
+      )}
 
       {isCurrent && (
         <div className="relative mt-5 flex items-center gap-2 text-[11px] tracking-widest uppercase text-brand-300">
@@ -141,4 +207,10 @@ function PlanCard({ plan, highlight, isCurrent, onSelect }: {
       )}
     </button>
   );
+}
+
+function formatCount(n: number): string {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+  if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, "") + "k";
+  return String(n);
 }

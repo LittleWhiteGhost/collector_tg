@@ -22,6 +22,10 @@ export interface Channel {
   plan: string; invite_link: string; members: number; active: boolean;
   created_at: string;
 }
+export interface PublicChannel {
+  id: string; name: string; handle: string; description: string;
+  plan: string; members: number;
+}
 export interface UserOut {
   id: number; tg_id: number; username: string | null;
   first_name: string | null; last_name: string | null; is_admin: boolean;
@@ -107,6 +111,7 @@ export const api = {
   // user
   me:                () => request<UserOut>("/api/auth/me"),
   getPlans:          () => request<Plan[]>("/api/plans"),
+  getPublicChannels: () => request<PublicChannel[]>("/api/channels"),
   getMySubscription: () => request<Subscription>("/api/me/subscription"),
   getMyPayments:     () => request<Payment[]>("/api/me/payments"),
   getMyChannels:     () => request<Channel[]>("/api/me/channels"),

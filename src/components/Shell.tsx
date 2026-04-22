@@ -93,7 +93,9 @@ export default function Shell({ user, page, onNavigate, children }: Props) {
         {/* Main */}
         <main className="flex-1 min-w-0 pb-24 sm:pb-10">
           <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-10 pt-6 sm:pt-10">
-            {children}
+            <div key={page} className="page-enter">
+              {children}
+            </div>
           </div>
         </main>
       </div>

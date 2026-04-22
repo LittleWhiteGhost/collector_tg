@@ -10,7 +10,7 @@ import AdminChannels from "./pages/admin/Channels";
 import AdminPlans from "./pages/admin/Plans";
 import AdminUsers from "./pages/admin/Users";
 import AdminPayments from "./pages/admin/Payments";
-import { api, initSession, type Channel, type Payment, type Plan, type PlanId, type Subscription, type UserOut } from "./api";
+import { api, initSession, type Channel, type Payment, type Plan, type PlanId, type PublicChannel, type Subscription, type UserOut } from "./api";
 import { tg } from "./lib/tg";
 
 type Status = "idle" | "loading" | "success" | "error";
@@ -20,6 +20,7 @@ export default function App() {
   const [slide, setSlide] = useState(0);
   const [user, setUser] = useState<UserOut | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [publicChannels, setPublicChannels] = useState<PublicChannel[]>([]);
   const [sub, setSub] = useState<Subscription | null>(null);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -38,13 +39,15 @@ export default function App() {
 
   const refresh = async () => {
     try {
-      const [p, s, c, pay] = await Promise.all([
+      const [p, pc, s, c, pay] = await Promise.all([
         api.getPlans(),
+        api.getPublicChannels().catch(() => [] as PublicChannel[]),
         api.getMySubscription().catch(() => null),
         api.getMyChannels().catch(() => [] as Channel[]),
         api.getMyPayments().catch(() => [] as Payment[]),
       ]);
       setPlans(p);
+      setPublicChannels(pc);
       setSub(s);
       setChannels(c);
       setPayments(pay);
@@ -101,7 +104,7 @@ export default function App() {
   return (
     <Shell user={user} page={page} onNavigate={setPage}>
       {page === "plans" && (
-        <Plans plans={plans} subscription={sub} selected={selected} onSelect={setSelected} onPay={handlePay} status={status} />
+        <Plans plans={plans} channels={publicChannels} subscription={sub} selected={selected} onSelect={setSelected} onPay={handlePay} status={status} />
       )}
       {page === "profile" && (
         <Profile user={user} subscription={sub} channels={channels} payments={payments} onUpgrade={() => setPage("plans")} />
