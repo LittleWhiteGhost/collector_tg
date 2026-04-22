@@ -91,6 +91,16 @@ html, body, #root {
   animation: fadeSlideUp 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* Promo code expand */
+@keyframes promoExpand {
+  0%   { opacity: 0; transform: translateY(-6px); max-height: 0; }
+  100% { opacity: 1; transform: translateY(0);   max-height: 120px; }
+}
+.promo-expand {
+  animation: promoExpand 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  overflow: hidden;
+}
+
 /* Subtle pulsing glow on primary CTA */
 .cta-gradient {
   animation: shimmerGlow 3.8s ease-in-out infinite;

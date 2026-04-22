@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Lock, CheckCircle2, Star, Loader2, ShieldCheck, Sparkles, Hash, Users, Tv2, Tag, X } from "lucide-react";
+import { Lock, CheckCircle2, Star, Loader2, ShieldCheck, Sparkles, Hash, Users, Tv2, Tag, X, ChevronDown } from "lucide-react";
 import { api, type Plan, type PlanId, type PublicChannel, type Subscription } from "../api";
 import { iconFor } from "../lib/icons";
 import { Button, Badge } from "../components/ui";
@@ -48,12 +48,14 @@ export default function Plans({ plans, channels, subscription, selected, onSelec
   const [promoApplied, setPromoApplied] = useState<{ code: string; percent: number; finalStars: number } | null>(null);
   const [promoStatus, setPromoStatus] = useState<"idle" | "validating" | "error">("idle");
   const [promoErr, setPromoErr] = useState<string>("");
+  const [promoOpen, setPromoOpen] = useState(false);
 
   useEffect(() => {
     // Clear on plan switch — different plan may require different code.
     setPromoApplied(null);
     setPromoStatus("idle");
     setPromoErr("");
+    setPromoOpen(false);
   }, [current?.id]);
 
   const applyPromo = async () => {
@@ -151,7 +153,7 @@ export default function Plans({ plans, channels, subscription, selected, onSelec
         ))}
       </div>
 
-      {/* Promo code */}
+      {/* Promo code — collapsible toggle keeps the CTA above the fold */}
       {current && !isCurrent && (
         <div className="max-w-md mx-auto">
           {promoApplied ? (
@@ -169,18 +171,28 @@ export default function Plans({ plans, channels, subscription, selected, onSelec
                 <X className="h-4 w-4" />
               </button>
             </div>
+          ) : !promoOpen ? (
+            <button
+              onClick={() => setPromoOpen(true)}
+              className="w-full flex items-center justify-center gap-2 rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-4 py-2.5 text-[12px] tracking-widest uppercase text-ink-300 hover:text-brand-300 hover:border-brand-500/40 transition"
+            >
+              <Tag className="h-3.5 w-3.5" />
+              Have a promo code?
+              <ChevronDown className="h-3.5 w-3.5" />
+            </button>
           ) : (
-            <div>
+            <div className="promo-expand">
               <div className="flex gap-2">
                 <div className="flex-1 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2.5">
                   <Tag className="h-4 w-4 text-ink-300 shrink-0" />
                   <input
                     type="text"
+                    autoFocus
                     value={promoInput}
                     onChange={(e) => { setPromoInput(e.target.value.toUpperCase()); setPromoErr(""); setPromoStatus("idle"); }}
                     onKeyDown={(e) => { if (e.key === "Enter") applyPromo(); }}
-                    placeholder="Promo code (optional)"
-                    className="flex-1 bg-transparent outline-none text-sm placeholder:text-ink-300/60 uppercase tracking-wider"
+                    placeholder="Enter code"
+                    className="flex-1 bg-transparent outline-none text-sm placeholder:text-ink-300/60 uppercase tracking-wider min-w-0"
                   />
                 </div>
                 <button
@@ -189,6 +201,13 @@ export default function Plans({ plans, channels, subscription, selected, onSelec
                   className="px-4 rounded-2xl text-xs font-bold tracking-widest uppercase border border-white/10 bg-white/[0.04] hover:border-brand-500/40 hover:text-brand-300 disabled:opacity-40 transition"
                 >
                   {promoStatus === "validating" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
+                </button>
+                <button
+                  onClick={() => { setPromoOpen(false); setPromoInput(""); setPromoErr(""); }}
+                  aria-label="Close promo"
+                  className="px-3 rounded-2xl border border-white/10 bg-white/[0.02] text-ink-300 hover:text-white transition"
+                >
+                  <X className="h-4 w-4" />
                 </button>
               </div>
               {promoErr && <p className="text-[11px] text-red-400 mt-1.5 pl-1">{promoErr}</p>}
