@@ -1,6 +1,7 @@
 export type TGWebApp = {
   ready?: () => void; expand?: () => void;
   openInvoice?: (url: string, cb: (s: string) => void) => void;
+  openTelegramLink?: (url: string) => void;
   close?: () => void;
   HapticFeedback?: { impactOccurred?: (s: string) => void };
 };

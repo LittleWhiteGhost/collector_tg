@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Shell, { type Page } from "./components/Shell";
 import Welcome from "./pages/Welcome";
 import Plans from "./pages/Plans";
+import Channels from "./pages/Channels";
 import Profile from "./pages/Profile";
 import Result from "./pages/Result";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -10,6 +11,7 @@ import AdminChannels from "./pages/admin/Channels";
 import AdminPlans from "./pages/admin/Plans";
 import AdminUsers from "./pages/admin/Users";
 import AdminPayments from "./pages/admin/Payments";
+import AdminPromo from "./pages/admin/Promo";
 import { api, initSession, type Channel, type Payment, type Plan, type PlanId, type PublicChannel, type Subscription, type UserOut } from "./api";
 import { tg } from "./lib/tg";
 
@@ -59,11 +61,11 @@ export default function App() {
 
   const currentPlan = plans.find(pp => pp.id === selected) ?? plans[0];
 
-  const handlePay = async () => {
+  const handlePay = async (promoCode?: string) => {
     if (!currentPlan) return;
     setStatus("loading"); setErr("");
     try {
-      const { invoice_link } = await api.createInvoice(currentPlan.id);
+      const { invoice_link } = await api.createInvoice(currentPlan.id, promoCode);
       const w = tg();
       if (w?.openInvoice) {
         w.openInvoice(invoice_link, async (s) => {
@@ -106,6 +108,14 @@ export default function App() {
       {page === "plans" && (
         <Plans plans={plans} channels={publicChannels} subscription={sub} selected={selected} onSelect={setSelected} onPay={handlePay} status={status} />
       )}
+      {page === "channels" && (
+        <Channels
+          plans={plans}
+          channels={publicChannels}
+          subscription={sub}
+          onChoosePlan={(id) => { setSelected(id); setPage("plans"); }}
+        />
+      )}
       {page === "profile" && (
         <Profile user={user} subscription={sub} channels={channels} payments={payments} onUpgrade={() => setPage("plans")} />
       )}
@@ -114,6 +124,7 @@ export default function App() {
       {page === "admin:plans"     && <AdminPlans     />}
       {page === "admin:users"     && <AdminUsers     />}
       {page === "admin:payments"  && <AdminPayments  />}
+      {page === "admin:promo"     && <AdminPromo     />}
     </Shell>
   );
 }

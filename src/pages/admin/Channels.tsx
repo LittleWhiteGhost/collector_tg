@@ -3,7 +3,7 @@ import { Plus, Trash2, Power, Edit3, Save, X, Copy } from "lucide-react";
 import { api, type Channel, type ChannelIn } from "../../api";
 import { Badge, Button, Card, Empty, ErrorBlock, Field, Input, LoadingBlock, Section, Select, TextArea } from "../../components/ui";
 
-const EMPTY: ChannelIn = { name: "", handle: "", description: "", plan: "basic", invite_link: "", active: true };
+const EMPTY: ChannelIn = { name: "", handle: "", description: "", plan: "basic", invite_link: "", active: true, chat_id: "" };
 
 export default function AdminChannels() {
   const [rows, setRows] = useState<Channel[] | null>(null);
@@ -22,7 +22,8 @@ export default function AdminChannels() {
   const openEdit = (c: Channel) => {
     setEditingId(c.id); setCreating(true);
     setForm({ name: c.name, handle: c.handle, description: c.description,
-      plan: (c.plan as ChannelIn["plan"]) ?? "basic", invite_link: c.invite_link, active: c.active });
+      plan: (c.plan as ChannelIn["plan"]) ?? "basic", invite_link: c.invite_link, active: c.active,
+      chat_id: c.chat_id ?? "" });
   };
   const cancel = () => { setCreating(false); setEditingId(null); };
 
@@ -61,7 +62,17 @@ export default function AdminChannels() {
                   <option value="elite">ELITE</option><option value="all">ALL PLANS</option>
                 </Select>
               </Field>
+              <Field label="Chat ID (optional)">
+                <Input
+                  value={form.chat_id ?? ""}
+                  onChange={e => setForm({...form, chat_id: e.target.value})}
+                  placeholder="-1001234567890"
+                />
+              </Field>
             </div>
+            <p className="text-[11px] text-ink-300 -mt-2">
+              Chat ID is required for auto-kick after expiry and per-user invite links. Make the bot an admin of the channel, then send any message in it and use <code>@getidsbot</code> to see its numeric ID.
+            </p>
             <Field label="Description"><TextArea rows={3} value={form.description ?? ""} onChange={e => setForm({...form, description: e.target.value})} /></Field>
             <div className="flex items-center gap-3">
               <label className="flex items-center gap-2 text-sm">

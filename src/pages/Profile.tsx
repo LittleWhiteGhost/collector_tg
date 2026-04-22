@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { User as UserIcon, Copy, Check, Calendar, Clock, Receipt, Radio, Sparkles, Star } from "lucide-react";
-import type { Channel, Payment, Subscription, UserOut } from "../api";
+import { useEffect, useState } from "react";
+import { User as UserIcon, Copy, Check, Calendar, Clock, Receipt, Radio, Sparkles, Star, Gift, Share2 } from "lucide-react";
+import { api, type Channel, type Payment, type ReferralInfo, type Subscription, type UserOut } from "../api";
 import { Badge, Button, Card, Empty, Stat } from "../components/ui";
+import { tg } from "../lib/tg";
 
 function fmt(d: string | null): string {
   if (!d) return "—";
@@ -16,6 +17,33 @@ export default function Profile({ user, subscription, channels, payments, onUpgr
   payments: Payment[];
   onUpgrade: () => void;
 }) {
+  const [referral, setReferral] = useState<ReferralInfo | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    api.getReferral().then(setReferral).catch(() => setReferral(null));
+  }, []);
+
+  const copyRef = async () => {
+    if (!referral?.link) return;
+    try {
+      await navigator.clipboard.writeText(referral.link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // ignore
+    }
+  };
+
+  const shareRef = () => {
+    if (!referral?.link) return;
+    const text = `Join me and get premium channels — I'll get +7 free days when you subscribe.`;
+    const url = `https://t.me/share/url?url=${encodeURIComponent(referral.link)}&text=${encodeURIComponent(text)}`;
+    const w = tg();
+    if (w?.openTelegramLink) w.openTelegramLink(url);
+    else window.open(url, "_blank");
+  };
+
   return (
     <div className="space-y-6 sm:space-y-8">
       <header className="flex items-center gap-4">
@@ -60,6 +88,49 @@ export default function Profile({ user, subscription, channels, payments, onUpgr
             <h2 className="text-xl font-bold">No active subscription</h2>
             <p className="text-[13px] text-ink-300 max-w-xs">Pick a plan to unlock premium channels, analytics and instant access.</p>
             <Button onClick={onUpgrade}>Choose a plan</Button>
+          </div>
+        </Card>
+      )}
+
+      {/* referral */}
+      {referral && (
+        <Card className="relative overflow-hidden">
+          <div className="absolute -top-20 -left-16 h-56 w-56 rounded-full bg-brand-500/15 blur-3xl pointer-events-none" />
+          <div className="relative space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-xl bg-brand-500/15 grid place-items-center shrink-0">
+                <Gift className="h-5 w-5 text-brand-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] tracking-[0.3em] text-brand-400 uppercase font-semibold">Referral</p>
+                <h3 className="text-lg font-bold tracking-tight">Invite friends · get +7 days free</h3>
+                <p className="text-[12px] text-ink-300 mt-0.5">Share your link. When a friend pays for any plan, you get +7 days added to yours.</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/30 px-3 py-2.5">
+              <span className="text-[12px] text-ink-300 flex-1 truncate select-all">{referral.link}</span>
+              <button
+                onClick={copyRef}
+                className="p-2 rounded-lg hover:bg-white/5 text-ink-300 hover:text-white transition"
+                title="Copy link"
+              >
+                {copied ? <Check className="h-4 w-4 text-brand-400" /> : <Copy className="h-4 w-4" />}
+              </button>
+              <button
+                onClick={shareRef}
+                className="p-2 rounded-lg hover:bg-white/5 text-ink-300 hover:text-white transition"
+                title="Share in Telegram"
+              >
+                <Share2 className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <Stat label="Invited"  value={referral.total_invited} />
+              <Stat label="Paid"     value={referral.paid_conversions} />
+              <Stat label="Earned"   value={`+${referral.bonus_days_earned}d`} />
+            </div>
           </div>
         </Card>
       )}

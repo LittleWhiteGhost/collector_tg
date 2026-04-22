@@ -20,7 +20,7 @@ export interface Payment {
 export interface Channel {
   id: string; name: string; handle: string; description: string;
   plan: string; invite_link: string; members: number; active: boolean;
-  created_at: string;
+  created_at: string; chat_id?: string | null;
 }
 export interface PublicChannel {
   id: string; name: string; handle: string; description: string;
@@ -56,9 +56,36 @@ export interface StatsAnalytics {
 export interface ChannelIn {
   name: string; handle: string; description?: string;
   plan: "basic" | "pro" | "elite" | "all"; invite_link?: string; active?: boolean;
+  chat_id?: string | null;
 }
 export interface ChannelPatch { name?: string; handle?: string; description?: string;
-  plan?: "basic" | "pro" | "elite" | "all"; invite_link?: string; active?: boolean }
+  plan?: "basic" | "pro" | "elite" | "all"; invite_link?: string; active?: boolean;
+  chat_id?: string | null }
+
+export interface PromoCode {
+  code: string; description: string; discount_percent: number;
+  plan_id: string; max_uses: number; used_count: number;
+  expires_at: string | null; active: boolean; created_at: string;
+}
+export interface PromoCodeIn {
+  code: string; description?: string; discount_percent: number;
+  plan_id?: string; max_uses?: number; expires_at?: string | null; active?: boolean;
+}
+export interface PromoCodePatch {
+  description?: string; discount_percent?: number; plan_id?: string;
+  max_uses?: number; expires_at?: string | null; active?: boolean;
+}
+export interface PromoValidateResponse {
+  ok: boolean; discount_percent: number; final_stars: number; error: string | null;
+}
+export interface ReferralInfo {
+  link: string; total_invited: number; paid_conversions: number; bonus_days_earned: number;
+}
+export interface InvoiceResponse {
+  invoice_link: string; plan_id: string; stars: number;
+  final_stars: number; discount_percent: number;
+  promo_code: string | null; payload: string;
+}
 
 export interface PlanIn {
   id: string; label: string; stars: number; period_days?: number;
@@ -115,9 +142,13 @@ export const api = {
   getMySubscription: () => request<Subscription>("/api/me/subscription"),
   getMyPayments:     () => request<Payment[]>("/api/me/payments"),
   getMyChannels:     () => request<Channel[]>("/api/me/channels"),
-  createInvoice:     (plan_id: PlanId) =>
-    request<{ invoice_link: string; plan_id: string; stars: number; payload: string }>(
-      "/api/payments/invoice", { method: "POST", body: JSON.stringify({ plan_id }) }),
+  createInvoice:     (plan_id: PlanId, promo_code?: string) =>
+    request<InvoiceResponse>(
+      "/api/payments/invoice", { method: "POST", body: JSON.stringify({ plan_id, promo_code: promo_code || null }) }),
+  validatePromo:     (code: string, plan_id: PlanId) =>
+    request<PromoValidateResponse>(
+      "/api/payments/promo/validate", { method: "POST", body: JSON.stringify({ code, plan_id }) }),
+  getReferral:       () => request<ReferralInfo>("/api/me/referral"),
 
   // admin — channels
   adminListChannels:  () => request<Channel[]>("/api/admin/channels"),
@@ -147,4 +178,15 @@ export const api = {
   adminOverview:      () => request<StatsOverview>("/api/admin/stats/overview"),
   adminAnalytics:     () => request<StatsAnalytics>("/api/admin/stats/analytics"),
   adminPayments:      () => request<(Payment & { user_id: number })[]>("/api/admin/payments"),
+
+  // admin — promo codes
+  adminListPromo:     () => request<PromoCode[]>("/api/admin/promo"),
+  adminCreatePromo:   (data: PromoCodeIn) =>
+    request<PromoCode>("/api/admin/promo", { method: "POST", body: JSON.stringify(data) }),
+  adminUpdatePromo:   (code: string, data: PromoCodePatch) =>
+    request<PromoCode>(`/api/admin/promo/${encodeURIComponent(code)}`, { method: "PUT", body: JSON.stringify(data) }),
+  adminTogglePromo:   (code: string) =>
+    request<PromoCode>(`/api/admin/promo/${encodeURIComponent(code)}/toggle`, { method: "PATCH" }),
+  adminDeletePromo:   (code: string) =>
+    request<{ ok: boolean }>(`/api/admin/promo/${encodeURIComponent(code)}`, { method: "DELETE" }),
 };

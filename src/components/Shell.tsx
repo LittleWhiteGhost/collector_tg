@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import {
   Sparkles, User as UserIcon, LayoutDashboard, Radio,
-  Star, UsersRound, Receipt, Shield, ExternalLink,
+  Star, UsersRound, Receipt, Shield, ExternalLink, Hash, Tag,
 } from "lucide-react";
 import type { UserOut } from "../api";
 import { API_BASE } from "../api";
@@ -9,6 +9,7 @@ import { API_BASE } from "../api";
 export type Page =
   | "welcome"
   | "plans"
+  | "channels"
   | "profile"
   | "success"
   | "error"
@@ -16,21 +17,24 @@ export type Page =
   | "admin:channels"
   | "admin:plans"
   | "admin:users"
-  | "admin:payments";
+  | "admin:payments"
+  | "admin:promo";
 
 type NavItem = { id: Page; label: string; icon: typeof Sparkles; adminOnly?: boolean; group?: string };
 
 const NAV: NavItem[] = [
   { id: "plans",            label: "Plans",     icon: Sparkles,        group: "main" },
+  { id: "channels",         label: "Channels",  icon: Hash,            group: "main" },
   { id: "profile",          label: "Profile",   icon: UserIcon,        group: "main" },
   { id: "admin:dashboard",  label: "Dashboard", icon: LayoutDashboard, adminOnly: true, group: "admin" },
   { id: "admin:channels",   label: "Channels",  icon: Radio,           adminOnly: true, group: "admin" },
   { id: "admin:plans",      label: "Tariffs",   icon: Star,            adminOnly: true, group: "admin" },
   { id: "admin:users",      label: "Users",     icon: UsersRound,      adminOnly: true, group: "admin" },
   { id: "admin:payments",   label: "Payments",  icon: Receipt,         adminOnly: true, group: "admin" },
+  { id: "admin:promo",      label: "Promo",     icon: Tag,             adminOnly: true, group: "admin" },
 ];
 
-const MOBILE_NAV_ORDER: Page[] = ["plans", "profile"];
+const MOBILE_NAV_ORDER: Page[] = ["plans", "channels", "profile"];
 const MOBILE_ADMIN_ORDER: Page[] = ["admin:dashboard", "admin:channels", "admin:plans"];
 
 interface Props {
